@@ -1,0 +1,30 @@
+FROM python:3.13
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y \
+    libglib2.0-0 libsm6 libxrender1 libxext6 \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Copy ONLY requirements first to leverage Docker layer cache
+COPY requirements.txt /app/requirements.txt
+
+# Upgrade pip and install packages without storing wheel cache
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Copy application code and model into /app/ with correct ownership
+COPY --chown=appuser:appuser app/ /app/
+COPY --chown=appuser:appuser model/ /app/model/
+
+# Switch to non-root user
+USER appuser
+
+# Default command
+ENTRYPOINT ["python3", "inference.py"]

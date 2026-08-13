@@ -1,0 +1,27 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Exclude heavy weights (use Git LFS or DVC instead)
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+data/
+datasets/
+
+# Logs & Temporary Files
+*.log
+install.log
+tmp/
+*.tmp
+
+# Secrets & Environment Variables
+.env
+.env.*
+!.env.example
