@@ -142,4 +142,4 @@ terraform destroy
 
 ## Screenshot expected outcome
 
-![alt text](image.png)
+![alt text](screenshots/image.png)
