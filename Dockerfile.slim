@@ -7,10 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set working directory for dependency installation
 WORKDIR /build
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
@@ -35,9 +31,6 @@ WORKDIR /app
 # by image-processing dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libglib2.0-0 \
-    libsm6 \
-    libxrender1 \
-    libxext6 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
