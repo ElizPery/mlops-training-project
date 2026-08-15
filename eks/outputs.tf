@@ -1,5 +1,5 @@
 output "cluster_name" {
-  description = "Назва EKS кластера"
+  description = "Name of the EKS cluster"
   value       = module.eks.cluster_name
 }
 
@@ -9,7 +9,7 @@ output "cluster_endpoint" {
 }
 
 output "kubectl_config_command" {
-  description = "Команда для оновлення локального kubeconfig"
+  description = "Command for updating the local kubeconfig"
   value       = "aws eks --region ${var.aws_region} update-kubeconfig --name ${module.eks.cluster_name}"
 }
 

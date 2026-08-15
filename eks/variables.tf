@@ -4,21 +4,21 @@ variable "aws_region" {
 }
 
 variable "environment" {
-  description = "Назва середовища"
+  description = "Environment name"
   type        = string
   default     = "dev"
 }
 
 variable "cluster_name" {
-  description = "Назва EKS кластера"
+  description = "EKS cluster name"
   type        = string
   default     = "mlops-eks-cluster"
 }
 
 variable "cluster_version" {
-  description = "Версія Kubernetes"
+  description = "Kubernetes version"
   type        = string
-  default     = "1.30"
+  default     = "1.34"
 }
 
 variable "cpu_node_instance_type" {
