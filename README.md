@@ -230,6 +230,6 @@ terraform destroy
 
 ## Screenshot of expected outcome in ArgoCD and Demo Application
 
-![alt text](screenshots/image.png)
+![alt text](screenshots/image_1.png)
 
 ![alt text](screenshots/image_2.png)
