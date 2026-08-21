@@ -199,15 +199,6 @@ kubectl get deploy -n application
 kubectl get pods -n application
 ```
 
-### 5. Test Access to the Demo Application
-
-Verify end-to-end delivery by accessing the deployed Nginx service:
-
-```bash
-kubectl -n application port-forward deployment/demo-nginx 8081:80
-```
-Navigate to `http://localhost:8081` in your browser. Receiving the standard "Welcome to nginx!" page confirms successful automated GitOps deployment.
-
 ---
 
 ## Resource Teardown
@@ -227,9 +218,3 @@ terraform destroy
 cd ../vpc
 terraform destroy 
 ```
-
-## Screenshot of expected outcome in ArgoCD and Demo Application
-
-![alt text](screenshots/image_1.png)
-
-![alt text](screenshots/image_2.png)

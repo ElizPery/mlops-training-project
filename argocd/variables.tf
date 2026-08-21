@@ -49,5 +49,5 @@ variable "app_repo_url" {
 variable "app_repo_branch" {
   description = "Branch"
   type        = string
-  default     = "main"
+  default     = "lesson-9"
 }
