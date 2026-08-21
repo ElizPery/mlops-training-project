@@ -1,0 +1,32 @@
+name: Train Model Pipeline
+
+on:
+  push:
+    branches:
+      - lesson-10
+
+jobs:
+  train-model:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Trigger AWS Step Function
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          EXECUTION_NAME="train-$(date +%s)"
+          
+          echo "Starting execution $EXECUTION_NAME for commit $SHORT_SHA..."
+          
+          aws stepfunctions start-execution \
+            --state-machine-arn "${{ secrets.STEP_FUNCTION_ARN }}" \
+            --name "$EXECUTION_NAME" \
+            --input "{\"source\": \"github-actions\", \"commit\": \"$SHORT_SHA\"}"
