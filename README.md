@@ -118,3 +118,9 @@ To avoid incurring unnecessary cloud expenses, destroy the resources when testin
 ```bash
 terraform destroy
 ```
+
+## Screenshots
+
+![alt text](screenshots/image.png)
+
+![alt text](screenshots/image_1.png)
