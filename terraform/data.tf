@@ -1,13 +1,3 @@
-terraform {
-  backend "s3" {
-    bucket  = "mlops-tfstate-training"
-    key     = "step-function/terraform.tfstate"
-    region  = "us-east-1"
-    encrypt = true
-    profile = "devops-course"
-  }
-}
-
 data "aws_iam_policy_document" "stepfunction_trust" {
   statement {
     actions = ["sts:AssumeRole"]

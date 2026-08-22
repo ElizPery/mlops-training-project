@@ -1,5 +1,5 @@
 resource "aws_iam_role" "lambda_exec" {
-  name = "lambda_exec_role"
+  name = "${var.project_name}-${var.environment}-lambda-exec-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -35,12 +35,12 @@ resource "aws_lambda_function" "log_metrics" {
 }
 
 resource "aws_iam_role" "stepfunction_exec" {
-  name               = "stepfunction_exec_role"
+  name               = "${var.project_name}-${var.environment}-sfn-exec-role"
   assume_role_policy = data.aws_iam_policy_document.stepfunction_trust.json
 }
 
 resource "aws_iam_role_policy" "stepfunction_invoke" {
-  name = "stepfunction_invoke_lambda"
+  name = "${var.project_name}-${var.environment}-sfn-invoke-lambda"
   role = aws_iam_role.stepfunction_exec.id
 
   policy = jsonencode({
