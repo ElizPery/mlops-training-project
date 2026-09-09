@@ -11,6 +11,7 @@ resource "helm_release" "argo" {
   chart      = "argo-cd"
   version    = var.argocd_chart_version
 
+  wait          = true # Wait for CRDs to be ready before moving to the next resource
   recreate_pods = true
   replace       = true
 
@@ -30,12 +31,12 @@ resource "kubernetes_manifest" "namespaces_appset" {
         git = {
           repoURL     = var.app_repo_url
           revision    = var.app_repo_branch
-          directories = [{ path = "namespace/*" }]
+          directories = [{ path = "argocd-apps/*" }]
         }
       }]
       template = {
         metadata = {
-          name      = "ns-{{path.basename}}"
+          name      = "{{path.basename}}-stack"
           namespace = var.argocd_namespace
         }
         spec = {
@@ -44,11 +45,11 @@ resource "kubernetes_manifest" "namespaces_appset" {
             repoURL        = var.app_repo_url
             targetRevision = var.app_repo_branch
             path           = "{{path}}"
-            directory      = { recurse = true } # читати підкаталоги (apps/, configmaps/, secrets/)
+            directory      = { recurse = true } # (apps/, configmaps/, secrets/)
           }
           destination = {
             server    = "https://kubernetes.default.svc"
-            namespace = "{{path.basename}}" # application / infra-tools / ...
+            namespace = "{{path.basename}}" # mlops-system / monitoring / ...
           }
           syncPolicy = {
             automated   = { prune = true, selfHeal = true }

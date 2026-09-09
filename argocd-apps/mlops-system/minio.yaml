@@ -1,0 +1,54 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: minio
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: registry-1.docker.io/bitnamicharts
+    chart: minio
+    targetRevision: 17.0.21
+    helm:
+      valuesObject:
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/minio
+          tag: 2025.7.23-debian-12-r3
+
+        clientImage:
+          registry: docker.io
+          repository: bitnamilegacy/minio-client
+          tag: 2025.7.21-debian-12-r2
+
+        volumePermissions:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/os-shell
+            tag: 12-debian-12-r50
+
+        console:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/minio-object-browser
+            tag: 2.0.2-debian-12-r3
+
+        auth:
+          rootUser: minio
+          rootPassword: minio123
+        defaultBuckets: "mlflow-artifacts"
+        service:
+          type: ClusterIP
+        persistence:
+          enabled: false
+  destination:
+    namespace: mlops-system
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true

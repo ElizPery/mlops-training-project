@@ -35,7 +35,7 @@ variable "gpu_node_instance_type" {
 
 variable "cpu_nodes_desired" {
   description = "Desired number of CPU nodes"
-  default     = 4
+  default     = 5
 }
 
 variable "cpu_nodes_min" {
@@ -45,7 +45,7 @@ variable "cpu_nodes_min" {
 
 variable "cpu_nodes_max" {
   description = "Maximum number of CPU nodes"
-  default     = 4
+  default     = 5
 }
 
 variable "gpu_nodes_desired" {

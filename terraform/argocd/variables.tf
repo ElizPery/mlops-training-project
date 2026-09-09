@@ -31,7 +31,7 @@ variable "eks_state_region" {
 variable "argocd_namespace" {
   description = "Namespace for Argo CD"
   type        = string
-  default     = "infra-tools"
+  default     = "iargocd"
 }
 
 variable "argocd_chart_version" {
@@ -43,11 +43,11 @@ variable "argocd_chart_version" {
 variable "app_repo_url" {
   description = "Public Git repository with manifests"
   type        = string
-  default     = "https://github.com/ElizPery/mlops-training-project-manifests.git"
+  default     = "https://github.com/ElizPery/mlops-training-project.git"
 }
 
 variable "app_repo_branch" {
   description = "Branch"
   type        = string
-  default     = "lesson-9"
+  default     = "main"
 }
