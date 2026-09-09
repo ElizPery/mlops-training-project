@@ -7,50 +7,53 @@ This project provisions a production-ready Kubernetes cluster on AWS EKS using T
 ## Repository Structure
 
 ```text
-eks-vpc-cluster/
-├── vpc/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   ├── terraform.tf
-│   └── backend.tf
-├── eks/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   ├── terraform.tf
-│   ├── backend.tf
-│   └── data.tf
-├── argocd/          # Argo CD deployment and ApplicationSet manifest
-│   ├── values/
-│   │   └── argocd-values.yaml
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   ├── terraform.tf
-│   ├── backend.tf
-│   └── data.tf
+mlops-training-project/
+├── terraform/
+│   ├── vpc/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   ├── terraform.tf
+│   │   └── backend.tf
+│   ├── eks/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   ├── terraform.tf
+│   │   ├── backend.tf
+│   │   └── data.tf
+│   ├── argocd/          # Argo CD deployment and ApplicationSet manifest
+│   │   ├── values/
+│   │   │   └── argocd-values.yaml
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   ├── terraform.tf
+│   │   ├── backend.tf
+│   │   └── data.tf
+├── argocd-apps/
+│   ├── mlops-system/
+│   │   ├── mlflow-postgres.yaml
+│   │   ├── minio.yaml
+│   │   ├── ns.yaml
+│   │   └── mlflow.yaml
+│   │
+│   ├── monitoring/
+│   │   ├── kube-prometheus-stack.yaml
+│   │   ├── loki.yaml
+│   │   ├── ns.yaml
+│   │   └── pushgateway.yaml
+│   │
+│   ├── staging/
+│   │   ├── ns.yaml
+│   │   └── inference-staging.yaml
+│   │
+│   ├── production/
+│   │   ├── ns.yaml
+│   │   ├── inference-production.yaml
+│   │   └── evidently-cronjob.yaml
 ├── .gitignore
 └── README.md
-
-
-argocd-apps/
-├── mlops-system/
-│   ├── mlflow-postgres.yaml
-│   ├── minio.yaml
-│   └── mlflow.yaml
-│
-├── monitoring/
-│   ├── kube-prometheus-stack.yaml
-│   ├── loki.yaml
-│   └── pushgateway.yaml
-│
-├── staging/
-│   └── inference-staging.yaml
-│
-└── production/
-    ├── inference-production.yaml
-    └── evidently-cronjob.yaml
 ```
 
 ---
@@ -261,9 +264,6 @@ kubectl get applications -n argocd
 Ensure all applications are successfully deployed and in a `Synced / Healthy` state:
 
 ```bash
-# Check Argo CD Application statuses
-kubectl get applications -n argocd
-
 # Check pod statuses across namespaces
 kubectl get pods -n mlops-system
 kubectl get pods -n monitoring
