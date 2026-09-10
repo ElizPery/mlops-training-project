@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-service
+  namespace: staging
+  labels:
+    app: inference-service
+    environment: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inference-service
+  template:
+    metadata:
+      labels:
+        app: inference-service
+        environment: staging
+    spec:
+      containers:
+      - name: inference-api
+        image: 851725342702.dkr.ecr.us-east-1.amazonaws.com/inference-service:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow.mlops-system.svc.cluster.local:5000"
+        - name: MODEL_URI
+          value: "models:/iris-model@staging"
+        - name: MLFLOW_S3_ENDPOINT_URL
+          value: "http://minio.mlops-system.svc.cluster.local:9000"
+        - name: MODEL_VERSION
+          value: "v1.0.0"
+        - name: AWS_ACCESS_KEY_ID
+          value: "minio"
+        - name: AWS_SECRET_ACCESS_KEY
+          value: "minio123"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5

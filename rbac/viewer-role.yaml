@@ -1,0 +1,38 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mlops-read-only-global
+rules:
+- apiGroups: ["", "apps", "batch", "monitoring.coreos.com", "argoproj.io"]
+  resources: ["pods", "pods/log", "deployments", "services", "configmaps", "events", "applications"]
+  verbs: ["get", "list", "watch"]
+---
+# Binding Read-Only to Staging Namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-viewer-staging
+  namespace: staging
+subjects:
+- kind: Group
+  name: mlops-viewers
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: mlops-read-only-global
+  apiGroup: rbac.authorization.k8s.io
+---
+# Binding Read-Only to Production Namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bind-viewer-production
+  namespace: production
+subjects:
+- kind: Group
+  name: mlops-viewers
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: mlops-read-only-global
+  apiGroup: rbac.authorization.k8s.io
