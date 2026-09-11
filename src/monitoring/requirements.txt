@@ -1,0 +1,5 @@
+evidently>=0.4.0
+pandas<2
+scikit-learn
+mlflow
+requests

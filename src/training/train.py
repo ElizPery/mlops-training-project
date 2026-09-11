@@ -95,12 +95,16 @@ def train():
         model_info = mlflow.sklearn.log_model(
             sk_model=clf,
             artifact_path="model",
-            registered_model_name=MODEL_REGISTRY_NAME,
         )
 
-        # Set `@staging` alias
+        # 2. Explicitly register the model (guaranteed to return a valid version object)
+        model_version_obj = mlflow.register_model(
+            model_uri=model_info.model_uri, name=MODEL_REGISTRY_NAME
+        )
+        model_version = model_version_obj.version
+
+        # 3. Set the `@staging` alias using the robust version
         client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
-        model_version = model_info.registered_model_version
         client.set_registered_model_alias(
             name=MODEL_REGISTRY_NAME, alias="staging", version=model_version
         )
