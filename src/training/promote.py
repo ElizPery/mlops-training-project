@@ -1,5 +1,7 @@
 import logging
 import os
+
+from mlflow.exceptions import MlflowException
 from mlflow.tracking import MlflowClient
 
 logging.basicConfig(
@@ -17,7 +19,7 @@ def promote_staging_to_production():
     # 1. Get current staging version
     try:
         staging_version = client.get_model_version_by_alias(MODEL_NAME, "staging")
-    except Exception:
+    except MlflowException:
         raise RuntimeError(
             f"No active version found with alias '@staging' for model '{MODEL_NAME}'."
         )
@@ -29,7 +31,7 @@ def promote_staging_to_production():
         logger.info(
             f"Previous production model v{prod_version.version} demoted to '@archived'."
         )
-    except Exception:
+    except MlflowException:
         logger.info("No active production version found. Skipping archiving step.")
 
     # 3. Promote staging model to production

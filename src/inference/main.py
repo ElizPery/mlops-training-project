@@ -3,8 +3,10 @@ import json
 import logging
 import os
 import time
-from fastapi import FastAPI, HTTPException, Request, status
+
 import mlflow.pyfunc
+from fastapi import FastAPI, HTTPException, Request, status
+from mlflow.exceptions import MlflowException
 from prometheus_fastapi_instrumentator import Instrumentator
 from schemas import InferenceResponse, IrisInferenceInput
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -106,9 +108,9 @@ def load_model():
             return
 
         logger.info("Model successfully loaded into memory.")
-    except Exception as e:
+    except (MlflowException, RuntimeError, ValueError) as e:
         logger.warning(
-            f"Could not load MLflow model from registry ({str(e)}). Serving fallback mode."
+            f"Could not load MLflow model from registry ({e!s}). Serving fallback mode."
         )
         model = None
 
@@ -159,10 +161,10 @@ async def predict(request: Request, payload: IrisInferenceInput):
             prediction=pred_label, model_version=MODEL_VERSION, checksum_verified=True
         )
 
-    except Exception as e:
+    except (MlflowException, RuntimeError, ValueError) as e:
         latency = time.time() - start_time
         logger.error(
-            "Inference request failed",
+            "Inference request failed: {e!s}",
             extra={
                 "extra_fields": {
                     "event": "inference_error",

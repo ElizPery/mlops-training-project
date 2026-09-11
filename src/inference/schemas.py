@@ -1,3 +1,5 @@
+import math
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -9,7 +11,7 @@ class IrisInferenceInput(BaseModel):
 
     @field_validator("*")
     def check_not_nan(cls, v: float) -> float:
-        if v != v:  # NaN check
+        if math.isnan(v):  # NaN check
             raise ValueError("Input feature value cannot be NaN")
         return v
 
