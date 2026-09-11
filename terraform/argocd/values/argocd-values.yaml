@@ -1,3 +1,4 @@
+---
 configs:
   cm:
     timeout.reconcile: 30s
@@ -6,16 +7,11 @@ configs:
     policy.default: role:readonly
     policy.csv: |
       g, devops, role:admin
-
 server:
   service:
     type: ClusterIP
-  extraArgs:
-    - --insecure
-
+  extraArgs: [--insecure]
 redis:
   enabled: true
-
 applicationSet:
   enabled: true
-

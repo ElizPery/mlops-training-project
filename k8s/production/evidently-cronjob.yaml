@@ -1,10 +1,11 @@
+---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: evidently-iris-drift-checker
   namespace: production
 spec:
-  schedule: "0 2 * * *" # Runs every day at 2:00 AM UTC
+  schedule: 0 2 * * *  # Runs every day at 2:00 AM UTC
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -18,12 +19,12 @@ spec:
               imagePullPolicy: Always
               env:
                 - name: MLFLOW_TRACKING_URI
-                  value: "http://mlflow.production.svc.cluster.local:5000"
+                  value: http://mlflow.production.svc.cluster.local:5000
               resources:
                 requests:
-                  cpu: "200m"
-                  memory: "512Mi"
+                  cpu: 200m
+                  memory: 512Mi
                 limits:
-                  cpu: "500m"
-                  memory: "1Gi"
+                  cpu: 500m
+                  memory: 1Gi
           restartPolicy: OnFailure

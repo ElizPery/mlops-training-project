@@ -1,58 +1,48 @@
+---
 name: Model Promotion & Blue-Green EKS Deployment
-
 on:
   workflow_dispatch:
     inputs:
       promotion_note:
-        description: 'Reason for promoting staging model to production'
+        description: Reason for promoting staging model to production
         required: false
-        default: 'Automated promotion approved'
-
+        default: Automated promotion approved
 permissions:
   contents: write
-
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: inference-service
   NAMESPACE: production
-
 jobs:
   promote-and-deploy:
     name: Promote Model & Deploy Blue-Green
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
       - name: Configure AWS Credentials (Access Keys)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'
-
+          cache: pip
       - name: Install Python Dependencies
         run: |
           pip install -r src/training/requirements.txt
-
       - name: Run Model Promotion Script (MLflow Alias Update)
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
-          MODEL_REGISTRY_NAME: "iris-model"
+          MODEL_REGISTRY_NAME: iris-model
         run: |
           python src/training/promote.py
-
       - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -71,11 +61,11 @@ jobs:
       - name: Security Scan Container Image (Trivy)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'local/inference-service:scan-target'
-          format: 'table'
+          image-ref: local/inference-service:scan-target
+          format: table
           exit-code: '1' # Fails build if HIGH or CRITICAL vulnerabilities are found
           ignore-unfixed: true
-          severity: 'HIGH,CRITICAL'
+          severity: HIGH,CRITICAL
 
       # Push Verified Container to ECR
       - name: Push Verified Image to Amazon ECR
@@ -89,21 +79,17 @@ jobs:
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
           cache-from: type=gha
-
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: 'v1.30.0'
-
+          version: v1.30.0
       - name: Update Kubeconfig for AWS EKS
         run: |
           aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-
       - name: Determine Active & Inactive Deployments
         id: determine-target
         run: |
           CURRENT_VERSION=$(kubectl get svc inference-service -n ${{ env.NAMESPACE }} -o jsonpath='{.spec.selector.version}' 2>/dev/null || echo "blue")
-          
           if [ "$CURRENT_VERSION" == "blue" ]; then
             echo "ACTIVE=blue" >> $GITHUB_OUTPUT
             echo "INACTIVE=green" >> $GITHUB_OUTPUT
@@ -111,39 +97,32 @@ jobs:
             echo "ACTIVE=green" >> $GITHUB_OUTPUT
             echo "INACTIVE=blue" >> $GITHUB_OUTPUT
           fi
-          
           echo "Active Version: $CURRENT_VERSION"
           echo "Deploying Target: $INACTIVE"
-
       - name: Deploy Image to Inactive Target Environment
         run: |
           INACTIVE_COLOR="${{ steps.determine-target.outputs.INACTIVE }}"
           IMAGE_TAG="${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
-          
+
           # Update container image in deployment manifest
           sed -i "s|image: .*|image: $IMAGE_TAG|g" k8s/production/deployment-${INACTIVE_COLOR}.yaml
-          
+
           # Ensure deployment is scaled to 2 replicas and applied
           kubectl scale deployment/inference-service-${INACTIVE_COLOR} --replicas=2 -n ${{ env.NAMESPACE }} || true
           kubectl apply -f k8s/production/deployment-${INACTIVE_COLOR}.yaml
-
       - name: Wait for Inactive Deployment Readiness
         run: |
           INACTIVE_COLOR="${{ steps.determine-target.outputs.INACTIVE }}"
           echo "Waiting for inference-service-${INACTIVE_COLOR} rollout..."
           kubectl rollout status deployment/inference-service-${INACTIVE_COLOR} -n ${{ env.NAMESPACE }} --timeout=180s
-
       - name: Execute Zero-Downtime Traffic Switch (Patch Service Selector)
         run: |
           INACTIVE_COLOR="${{ steps.determine-target.outputs.INACTIVE }}"
           echo "Patching Service selector to point live traffic to ${INACTIVE_COLOR}..."
-          
           kubectl patch service inference-service -n ${{ env.NAMESPACE }} \
             -p "{\"spec\":{\"selector\":{\"version\":\"${INACTIVE_COLOR}\"}}}"
-
       - name: Scale Down Previous Idle Deployment
-        run: |
+        run: |-
           ACTIVE_COLOR="${{ steps.determine-target.outputs.ACTIVE }}"
           echo "Scaling down idle deployment: inference-service-${ACTIVE_COLOR}"
-          
           kubectl scale deployment/inference-service-${ACTIVE_COLOR} --replicas=0 -n ${{ env.NAMESPACE }}

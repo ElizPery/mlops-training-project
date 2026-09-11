@@ -164,7 +164,7 @@ async def predict(request: Request, payload: IrisInferenceInput):
     except (MlflowException, RuntimeError, ValueError) as e:
         latency = time.time() - start_time
         logger.error(
-            "Inference request failed: {e!s}",
+            f"Inference request failed: {e!s}",
             extra={
                 "extra_fields": {
                     "event": "inference_error",
