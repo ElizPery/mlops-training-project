@@ -4,77 +4,9 @@ This project provisions a production-ready Kubernetes cluster on AWS EKS using T
 
 ---
 
-## Repository Structure
+## Architecture Diagram
 
-```text
-mlops-training-project/
-├── terraform/
-│   ├── vpc/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   ├── terraform.tf
-│   │   └── backend.tf
-│   ├── eks/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   ├── terraform.tf
-│   │   ├── backend.tf
-│   │   └── data.tf
-│   ├── argocd/          # Argo CD deployment and ApplicationSet manifest
-│   │   ├── values/
-│   │   │   └── argocd-values.yaml
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   ├── terraform.tf
-│   │   ├── backend.tf
-│   │   └── data.tf
-├── argocd-apps/
-│   ├── mlops-system/
-│   │   ├── mlflow-postgres.yaml
-│   │   ├── minio.yaml
-│   │   ├── ns.yaml
-│   │   └── mlflow.yaml
-│   │
-│   ├── monitoring/
-│   │   ├── kube-prometheus-stack.yaml
-│   │   ├── loki.yaml
-│   │   ├── ns.yaml
-│   │   └── pushgateway.yaml
-│   │
-│   ├── staging/
-│   │   ├── ns.yaml
-│   │   └── inference-staging.yaml
-│   │
-│   ├── production/
-│   │   ├── ns.yaml
-│   │   ├── inference-production.yaml
-│   │   └── evidently-cronjob.yaml
-├── .gitignore
-└── README.md
-```
-
----
-
-## Architecture Overview
-
-- **VPC Module**: Uses the official `terraform-aws-modules/vpc/aws` module to create public/private subnets across multiple Availability Zones, a NAT Gateway for outbound internet access from private subnets, and essential Kubernetes subnet tags for load balancer auto-discovery.
-
-- **Terraform Remote State**: The eks/ configuration reads outputs directly from the `vpc/` state file using data `"terraform_remote_state" "vpc"`, maintaining strict decoupling between network and cluster management.
-
-- **Workload-Isolated Node Groups**:
-
-    - `cpu-nodes`: Standard compute nodes (t3.small) designated for controllers, monitoring, and standard microservices.
-
-    - `gpu-nodes`: Workload-isolated node group. For lab/educational environments, this is configured with cost-effective Spot instances (t3.small).
-
----
-
-## Kubernetes Namespaces Overview
-
-EKS cluster uses a multi-namespace architecture to enforce security boundaries, simplify Role-Based Access Control (RBAC) and isolate the continuous deployment control plane from data and application workloads:
+**Multi-Namespace Architecture and Control Plane Isolation:**
 
 ```text
                ┌───────────────────────────────────────────┐
@@ -84,233 +16,93 @@ EKS cluster uses a multi-namespace architecture to enforce security boundaries, 
                                      │
          ┌───────────────────────────┼───────────────────────────┐
          ▼                           ▼                           ▼
-┌───────────────────┐       ┌───────────────────────┐       ┌───────────────────┐
-│  mlops-system NS  │       │   monitoring NS       │       │ staging / prod NS │
-│ (MLflow, MinIO,   │       │ (Prometheus, Grafana, │       │(Inference API,    │
-│    PostgreSQL)    │       │   Loki, Pushgateway)  │       │  Canary Rollouts) │
-└───────────────────┘       └───────────────────────┘       └───────────────────┘
+┌───────────────────┐       ┌───────────────────────┐       ┌───────────────────────┐
+│  mlops-system NS  │       │   monitoring NS       │       │ staging / prod NS     │
+│ (MLflow, MinIO,   │       │ (Prometheus, Grafana, │       │(Inference API,        │
+│    PostgreSQL)    │       │   Loki, Pushgateway)  │       │  Blue/Green Rollouts) │
+└───────────────────┘       └───────────────────────┘       └───────────────────────┘
 ```
-
-1. `argocd` (Management & Control Plane)
-- **Purpose**: Houses the GitOps continuous delivery engine and ApplicationSet controllers.
-- **Key Workloads**: ArgoCD API Server, Repo Server, Application Controller, ApplicationSet Controller.
-- **Access Control**: Restricted strictly to DevOps and Infrastructure Platform Engineers.
-
-2. `mlops-system` (Platform Services)
-- **Purpose**: Provides centralized infrastructure for managing the Machine Learning lifecycle.
-- **Key Workloads**:
-**MLflow Tracking Server**: Central hub for logging model experiments, parameters, and registering versions.
-**Bitnami PostgreSQL**: Relational database backend for MLflow experiment metadata.
-**Bitnami MinIO**: S3-compatible object store for model artifacts and training outputs.
-
-3. `monitoring` (Observability & Telemetry)
-- **Purpose**: Aggregates cluster-wide metrics, system logs, and model performance data.
-- **Key Workloads**:
-**Prometheus Operator & ServiceMonitors**: Real-time collection of system and application metrics (RPS, Latency p50/p95, CPU/RAM).
-**Grafana**: Interactive dashboards visualizing real-time metrics and log streams.
-**Loki & Promtail**: Log aggregation stack capturing structured JSON logs from all running containers.
-**Prometheus Pushgateway**: Ingestion endpoint for ephemeral model drift metrics generated by Evidently AI jobs.
-
-4. `staging` (Pre-Production Testing)
-- **Purpose**: Isolated testing environment to validate inference microservice images and pipelines prior to production release.
-- **Key Workloads**:
-**Staging Inference API**: Test deployments executed during integration testing in CI/CD pipelines.
-
-5. `production` (Live Workloads)
-- **Purpose**: Serves end-user prediction requests with zero-downtime deployment patterns.
-- **Key Workloads**:
-Production Inference Service (Argo Rollouts): High-availability FastAPI service with Canary deployment strategies (90/10 traffic splitting) and automated rollback triggers.
-- **Evidently AI CronJob**: Scheduled background jobs evaluating data drift and model performance degradation.
-
 ---
 
-## Prerequisites
+## Dependencies & Tools Versions
 
 Before deploying, ensure you have installed and configured:
 
-1. **CLI Tools**:
-- **Terraform** (>= 1.5.0) installed locally.
-- **AWS CLI** v2 configured with administrator permissions.
-- **kubectl** installed and configured.
-
-2. **AWS Credentials**: Configured via `aws configure` or environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`).
-
-3. **S3 Backend Bucket**: An existing S3 bucket in your AWS account to store Terraform state files (configured as `mlops-tfstate-training` in `backend.tf`).
+- **Terraform** (>= 1.5.0)
+- **AWS CLI** v2 (configured with administrator permissions)
+- **kubectl** (version v1.30.0)
+- **Docker** (for building and pushing container images to ECR)
 
 ---
 
-## Deployment Steps
+## Repository Structure
+
+```text
+mlops-training-project/
+├── .github/workflows/       # CI/CD pipelines (ci.yml, promote.yml, train.yml)
+├── terraform/               # Infrastructure as Code (vpc, ecr, eks, argocd)
+├── argocd-apps/             # GitOps application manifests organized by namespace
+├── src/                     # Source code (inference, monitoring, training)
+├── k8s/                     # Kubernetes manifests (production, staging)
+├── rbac/                    # Roles and access permissions (RBAC)
+└── tests/                   # Unit and integration tests
+```
+
+---
+
+## Deployment Guide from Scratch (terraform apply → Status Verification)
 
 ### Step 1: Deploy Network Infrastructure (VPC)
 
 Navigate to the `vpc/` directory, initialize Terraform and apply the configuration:
 
 ```bash
-cd vpc
-
-# Initialize backend and providers
+cd terraform/vpc
 terraform init
-
-# Review and apply resources
 terraform plan
 terraform apply
 ```
 
-Verify that the outputs (`vpc_id`, `private_subnets`, `public_subnets`) are displayed in the terminal upon completion.
-
-### Step 2: Deploy Kubernetes Cluster (EKS)
-
-Navigate to the `eks/` directory, initialize Terraform and provision the cluster:
+### Step 2: Deploy ECR and EKS
 
 ```bash
-cd ../eks
-
-# Initialize backend and providers
+# ECR
+cd ../ecr
 terraform init
+terraform plan
+terraform apply
 
-# Review and apply resources
+# EKS Cluster
+cd ../eks
+terraform init
 terraform plan
 terraform apply
 ```
 
----
-
-## Connecting & Verifying the Cluster
-
-1. Update your local `kubeconfig`:
+### Step 3: Configure Cluster Access
 
 ```bash
 aws eks --region us-east-1 update-kubeconfig --name mlops-eks-cluster --profile devops-course
-```
-
-2. Verify node status:
-
-```bash
 kubectl get nodes -o wide
 ```
-All nodes should report a status of `Ready`.
 
-3. Check node group separation:
+### Step 4: Deploy Argo CD (Two-Stage Bootstrap)
 
-```bash
-# List CPU workload nodes
-kubectl get nodes -l workload=cpu
-
-# List GPU workload nodes
-kubectl get nodes -l workload=gpu
-```
-
-4. Verify node taints on GPU nodes:
-
-```bash
-kubectl describe nodes -l workload=gpu | grep Taints
-```
-Output should display: `Taints: nvidia.com/gpu=true:NoSchedule`.
-
----
-
-## Deploy Argo CD & ApplicationSet (Two-Stage Bootstrap)
-
-**⚠️ Important Note on Initial Bootstrap**:
-
-The `ApplicationSet` resource relies on Custom Resource Definitions (CRDs) installed by the Argo CD Helm chart. To prevent Terraform execution errors caused by `no matches for kind "ApplicationSet"`, deploy in two stages using `-target`:
+Due to Custom Resource Definition (CRD) dependencies for `ApplicationSet`, deploy in two stages:
 
 ```bash
 cd ../argocd
-
-# Initialize Terraform backend and modules
 terraform init
-
-# Install Argo CD Helm release to register CRDs in the API server
 terraform apply -target=helm_release.argocd 
-
-# Apply all remaining resources (including the ApplicationSet manifest)
-terraform apply 
+terraform apply
 ```
 
----
+### Step 5: Verify Status
 
-## Verifying the GitOps Deployment
-
-### 1. Verify Argo CD Control Plane
-
-Check that all core Argo CD components are running in the argocd namespace:
+Check pod statuses across namespaces:
 
 ```bash
 kubectl get pods -n argocd
-```
-Expected output: Pods prefixed with `argocd-server`, `argocd-repo-server`, `argocd-application-controller`, and `argocd-applicationset-controller` should be in the `Running` state.
-
-### 2. Access Argo CD Dashboard UI
-
-```bash
-# Extract the initial admin password
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
-
-# Start port-forwarding
-kubectl port-forward svc/argocd-server -n argocd 8080:80
-```
-
-### 3. Check Argo CD Applications
-
-Verify that the `ApplicationSet` generator automatically discovered the namespaces from your GitOps repository:
-
-```bash
-kubectl get applications -n argocd
-```
-
-### 4. Verify Application Deployment
-
-Ensure all applications are successfully deployed and in a `Synced / Healthy` state:
-
-```bash
-# Check pod statuses across namespaces
 kubectl get pods -n mlops-system
-kubectl get pods -n monitoring
-kubectl get pods -n staging
 kubectl get pods -n production
-```
-
----
-
-## Configure Port-Forwarding
-
-To allow the local Python script to communicate with cluster services, open separate terminal windows and run:
-
-```bash
-# MLflow Tracking Server (namespace: mlops-system)
-kubectl port-forward svc/mlflow -n mlops-system 5000:5000
-
-# MinIO S3 API (namespace: mlops-system)
-kubectl port-forward svc/minio -n mlops-system 9000:9000
-
-# Prometheus Pushgateway (namespace: monitoring)
-kubectl port-forward svc/pushgateway -n monitoring 9091:9091
-
-# Grafana UI (namespace: monitoring)
-kubectl port-forward svc/prometheus-operator-grafana -n monitoring 3000:80
-
-# Loki Log Aggregator (namespace: monitoring)
-kubectl port-forward svc/loki -n monitoring 3100:3100
-```
-
-
----
-
-## Resource Teardown
-
-To avoid incurring unnecessary cloud expenses, destroy the resources when testing is complete. **Order matters**: you must destroy the EKS cluster prior to destroying the VPC.
-
-```bash
-# 1. Destroy Argo CD and ApplicationSet
-cd argocd
-terraform destroy 
-
-# 2. Destroy EKS Cluster
-cd ../eks
-terraform destroy 
-
-# 3. Destroy VPC Network
-cd ../vpc
-terraform destroy 
 ```

@@ -71,7 +71,7 @@ jobs:
       - name: Push Verified Image to Amazon ECR
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./src/inference
           file: ./src/inference/Dockerfile
           platforms: linux/amd64
           push: true
@@ -107,8 +107,8 @@ jobs:
           # Update container image in deployment manifest
           sed -i "s|image: .*|image: $IMAGE_TAG|g" k8s/production/deployment-${INACTIVE_COLOR}.yaml
 
-          # Ensure deployment is scaled to 2 replicas and applied
-          kubectl scale deployment/inference-service-${INACTIVE_COLOR} --replicas=2 -n ${{ env.NAMESPACE }} || true
+          # Ensure deployment is scaled to 1 replicas and applied
+          kubectl scale deployment/inference-service-${INACTIVE_COLOR} --replicas=1 -n ${{ env.NAMESPACE }} || true
           kubectl apply -f k8s/production/deployment-${INACTIVE_COLOR}.yaml
       - name: Wait for Inactive Deployment Readiness
         run: |
