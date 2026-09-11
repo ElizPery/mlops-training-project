@@ -12,7 +12,19 @@
 
 - **State Management Complexity**: Running a comprehensive data and observability stack (MLflow, MinIO, PostgreSQL, Prometheus, Grafana, Loki) inside EKS requires careful memory/CPU tuning and clear namespace segmentation.
 
-## 3. What Would Be Done Differently With More Time
+## 3. Pipeline Orchestration: GitHub Actions vs. AWS Step Functions
+
+- **Decision**: Utilizing GitHub Actions for CI, model training, validation and promotion workflows instead of cloud-native workflow orchestrators like AWS Step Functions.
+
+- **Rationale**: 
+  - **Portability & Vendor Neutrality**: Keeps the MLOps pipeline decoupled from a specific cloud provider (AWS), allowing easier local testing or migration to other cloud environments.
+  - **Developer Experience**: Workflows live alongside the application and infrastructure code in the same repository, making pull requests, reviews, and version control straightforward.
+  - **Simplicity for CI/CD**: Eliminates the overhead of managing state machines, IAM roles for Step Functions and complex state payload limits for simple iterative tasks.
+
+- **Trade-offs & Limitations**: 
+  - For long-running, highly complex distributed training jobs or massive enterprise state-machine branching, AWS Step Functions offers native visual debugging and advanced orchestration scalability. However, GitHub Actions runners (or self-hosted runners) sufficiently handle our current ML lifecycle needs while drastically reducing architectural complexity.
+
+## 4. What Would Be Done Differently With More Time
 
 - **Progressive Delivery (Canary / Flagger)**: Replace manual or script-driven Blue-Green switches with tools like Argo Rollouts or Flagger to enable automated progressive traffic shifting (e.g., 10% → 50% → 100%) driven by real-time error rates and latency telemetry.
 

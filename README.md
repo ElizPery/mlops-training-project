@@ -106,3 +106,17 @@ kubectl get pods -n argocd
 kubectl get pods -n mlops-system
 kubectl get pods -n production
 ```
+
+## Step 6: First-Time Infrastructure Bootstrap
+
+If you are provisioning this infrastructure for the first time using GitHub Actions, you will need to retrieve the dynamically assigned public LoadBalancer IPs and register them as GitHub Secrets before running subsequent pipeline stages.
+
+1. Run the following command to inspect your core services:
+
+```bash
+kubectl get svc mlflow minio -n mlops-system
+```
+
+2. Copy the external IPs (`EXTERNAL-IP` column) for both services.
+
+3. Go to your GitHub repository: Settings > Secrets and variables > Actions, and add them as repository secrets so your workflows can communicate with the MLflow tracking server and MinIO object storage.

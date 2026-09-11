@@ -3,7 +3,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: inference-service-monitor
-  namespace: production
+  namespace: monitoring
   labels:
     app: inference-service
 spec:

@@ -61,7 +61,53 @@ The Evidently CronJob (`evidently-iris-drift-checker`) runs daily at 2:00 AM UTC
 1. Check pod logs or the Evidently output report.
 2. If data drift is critical, trigger model retraining using `train.py`, then follow the model promotion workflow to roll out a new version.
 
-## 5. How to Delete All Infrastructure
+## 5. Grafana Dashboard & PromQL Queries
+
+Below are the core PromQL queries used for monitoring the production ML inference service in the production namespace. Use a Time series panel for all of them.
+
+1. Request Rate
+
+Tracks the volume of incoming successful and failed requests per second per pod.
+
+```bash
+sum(rate(http_requests_total{namespace="production", pod=~"inference-service-.*"}[5m])) by (pod)
+```
+
+2. Latency p50 та p95
+
+Monitors model response time and request duration percentiles.
+
+```bash
+histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{namespace="production", pod=~"inference-service-.*"}[5m])) by (le, pod))
+
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace="production", pod=~"inference-service-.*"}[5m])) by (le, pod))
+```
+
+3. Error Rate
+
+Calculates the percentage of server errors (HTTP 5xx) relative to total traffic, safely handling zero-traffic periods to avoid division errors.
+
+```bash
+(
+  sum(rate(http_requests_total{namespace="production", pod=~"inference-service-.*", status=~"5.."}[5m]))
+  or
+  vector(0)
+)
+/
+sum(rate(http_requests_total{namespace="production", pod=~"inference-service-.*"}[5m])) * 100
+```
+
+4. Container Resource Usage
+
+Monitors hardware utilization at the pod level.
+
+```bash
+sum(container_memory_working_set_bytes{namespace="production", pod=~"inference-service-.*", container!=""}) by (pod)
+
+sum(rate(container_cpu_usage_seconds_total{namespace="production", pod=~"inference-service-.*", container!=""}[5m])) by (pod)
+```
+
+## 6. How to Delete All Infrastructure
 
 To prevent dependency errors, destroy cloud resources in strict reverse order (destroying EKS before VPC):
 
