@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from train import train
+from src.training.train import train
 
 
 @pytest.mark.integration

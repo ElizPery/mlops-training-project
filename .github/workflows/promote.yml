@@ -40,14 +40,14 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install -r src/requirements.txt
+          pip install -r src/training/requirements.txt
 
       - name: Run Model Promotion Script (MLflow Alias Update)
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
           MODEL_REGISTRY_NAME: "iris-model"
         run: |
-          python src/promote.py
+          python src/training/promote.py
 
       - name: Log in to Amazon ECR
         id: login-ecr
@@ -60,8 +60,8 @@ jobs:
       - name: Build Local Docker Image for Security Scan
         uses: docker/build-push-action@v5
         with:
-          context: ./src
-          file: ./src/Dockerfile
+          context: .
+          file: ./src/inference/Dockerfile
           platforms: linux/amd64
           load: true
           tags: local/inference-service:scan-target
@@ -81,8 +81,8 @@ jobs:
       - name: Push Verified Image to Amazon ECR
         uses: docker/build-push-action@v5
         with:
-          context: ./src
-          file: ./src/Dockerfile
+          context: .
+          file: ./src/inference/Dockerfile
           platforms: linux/amd64
           push: true
           tags: |

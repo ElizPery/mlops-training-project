@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Linting Tools
         run: |
-          pip install ruff black yamllint
+          pip install ruff black yamllint pytest
 
       - name: Install Terraform CLI
         uses: hashicorp/setup-terraform@v3
@@ -64,12 +64,18 @@ jobs:
       - name: Install Application Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest -r src/requirements.txt
+          pip install pytest pytest-cov
+          pip install -r src/inference/requirements.txt
+          pip install -r src/training/requirements.txt
 
       # Unit Test Execution (Preprocessing)
       - name: Run Preprocessing Unit Tests
+        env:
+          PYTHONPATH: .
         run: pytest tests/unit/test_preprocessing.py -v
 
       # Integration Test Execution (Full Training Run)
       - name: Run Training Pipeline Integration Test
+        env:
+          PYTHONPATH: .
         run: pytest tests/integration/test_training_pipeline.py -v -m "integration"
