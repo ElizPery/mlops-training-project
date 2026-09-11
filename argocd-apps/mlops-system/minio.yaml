@@ -35,7 +35,7 @@ spec:
           rootPassword: minio123
         defaultBuckets: mlflow-artifacts
         service:
-          type: ClusterIP
+          type: LoadBalancer
         persistence:
           enabled: false
   destination:
