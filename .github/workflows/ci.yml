@@ -72,10 +72,10 @@ jobs:
       - name: Run Preprocessing Unit Tests
         env:
           PYTHONPATH: .
-        run: pytest tests/unit/test_preprocessing.py -v
+        run: pytest tests/test_preprocessing.py -v
 
       # Integration Test Execution (Full Training Run)
       - name: Run Training Pipeline Integration Test
         env:
           PYTHONPATH: .
-        run: pytest tests/integration/test_training_pipeline.py -v -m "integration"
+        run: pytest tests/test_training_pipeline.py -v -m "integration"
