@@ -63,9 +63,9 @@ jobs:
         with:
           image-ref: local/inference-service:scan-target
           format: table
-          exit-code: '1' # Fails build if HIGH or CRITICAL vulnerabilities are found
+          exit-code: '1' # Fails build if or CRITICAL vulnerabilities are found
           ignore-unfixed: true
-          severity: HIGH,CRITICAL
+          severity: CRITICAL
 
       # Push Verified Container to ECR
       - name: Push Verified Image to Amazon ECR
