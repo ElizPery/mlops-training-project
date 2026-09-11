@@ -58,7 +58,9 @@ MODEL_VERSION = os.getenv("MODEL_VERSION", "v1.0.0")
 
 def verify_checksum(file_path: str, expected_hash: str) -> bool:
     if not expected_hash:
-        logger.warning("No expected SHA256 checksum provided. Skipping artifact verification.")
+        logger.warning(
+            "No expected SHA256 checksum provided. Skipping artifact verification."
+        )
         return True
 
     sha256_hash = hashlib.sha256()
@@ -70,7 +72,13 @@ def verify_checksum(file_path: str, expected_hash: str) -> bool:
     if calc_hash != expected_hash:
         logger.error(
             "Artifact integrity verification failed!",
-            extra={"extra_fields": {"event": "checksum_failure", "expected": expected_hash, "calculated": calc_hash}},
+            extra={
+                "extra_fields": {
+                    "event": "checksum_failure",
+                    "expected": expected_hash,
+                    "calculated": calc_hash,
+                }
+            },
         )
         return False
 
@@ -96,18 +104,18 @@ def load_model():
             logger.error("Model failed SHA256 check! Reverting to fallback mode.")
             model = None
             return
-        
+
         logger.info("Model successfully loaded into memory.")
     except Exception as e:
-        logger.warning(f"Could not load MLflow model from registry ({str(e)}). Serving fallback mode.")
+        logger.warning(
+            f"Could not load MLflow model from registry ({str(e)}). Serving fallback mode."
+        )
         model = None
 
+
 # Standard Iris dataset class mapping
-TARGET_NAMES = {
-    0: "setosa",
-    1: "versicolor",
-    2: "virginica"
-}
+TARGET_NAMES = {0: "setosa", 1: "versicolor", 2: "virginica"}
+
 
 @app.post("/predict", response_model=InferenceResponse)
 @limiter.limit("120/minute")
@@ -115,7 +123,14 @@ async def predict(request: Request, payload: IrisInferenceInput):
     start_time = time.time()
 
     try:
-        features = [[payload.sepal_length, payload.sepal_width, payload.petal_length, payload.petal_width]]
+        features = [
+            [
+                payload.sepal_length,
+                payload.sepal_width,
+                payload.petal_length,
+                payload.petal_width,
+            ]
+        ]
 
         if model is not None:
             prediction_raw = model.predict(features)
@@ -140,7 +155,9 @@ async def predict(request: Request, payload: IrisInferenceInput):
             },
         )
 
-        return InferenceResponse(prediction=pred_label, model_version=MODEL_VERSION, checksum_verified=True)
+        return InferenceResponse(
+            prediction=pred_label, model_version=MODEL_VERSION, checksum_verified=True
+        )
 
     except Exception as e:
         latency = time.time() - start_time
@@ -155,7 +172,10 @@ async def predict(request: Request, payload: IrisInferenceInput):
                 }
             },
         )
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Model inference failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Model inference failed",
+        )
 
 
 @app.get("/healthz")

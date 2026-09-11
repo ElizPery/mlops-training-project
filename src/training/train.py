@@ -11,7 +11,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger("model_training")
 
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
@@ -41,7 +43,9 @@ def train():
     logger.info(f"Connected to MLflow Tracking URI: {MLFLOW_TRACKING_URI}")
 
     iris = load_iris()
-    X_train, X_test, y_train, y_test = train_test_split(iris.data, iris.target, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        iris.data, iris.target, test_size=0.2, random_state=42
+    )
 
     params = {"n_estimators": 100, "max_depth": 4, "random_state": 42}
 
@@ -72,15 +76,21 @@ def train():
 
         # Register model in MLflow Registry
         model_info = mlflow.sklearn.log_model(
-            sk_model=clf, artifact_path="model", registered_model_name=MODEL_REGISTRY_NAME
+            sk_model=clf,
+            artifact_path="model",
+            registered_model_name=MODEL_REGISTRY_NAME,
         )
 
         # Set `@staging` alias
         client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
         model_version = model_info.registered_model_version
-        client.set_registered_model_alias(name=MODEL_REGISTRY_NAME, alias="staging", version=model_version)
+        client.set_registered_model_alias(
+            name=MODEL_REGISTRY_NAME, alias="staging", version=model_version
+        )
 
-        logger.info(f"Successfully registered model '{MODEL_REGISTRY_NAME}' v{model_version} with alias '@staging'.")
+        logger.info(
+            f"Successfully registered model '{MODEL_REGISTRY_NAME}' v{model_version} with alias '@staging'."
+        )
 
 
 if __name__ == "__main__":
