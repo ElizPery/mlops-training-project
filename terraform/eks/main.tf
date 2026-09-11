@@ -63,3 +63,21 @@ module "eks" {
     Project     = "mlops-course"
   }
 }
+
+# 1. Register the github-ci user as an access entry on the EKS cluster
+resource "aws_eks_access_entry" "github_ci" {
+  cluster_name  = module.eks.cluster_name 
+  principal_arn = "arn:aws:iam::851725342702:user/github-ci"
+  type          = "STANDARD"
+}
+
+# 2. Grant cluster-admin privileges to the github-ci user
+resource "aws_eks_access_policy_association" "github_ci_admin" {
+  cluster_name  = module.eks.cluster_name
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+  principal_arn = aws_eks_access_entry.github_ci.principal_arn
+
+  access_scope {
+    type = "cluster"
+  }
+}
