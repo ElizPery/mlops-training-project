@@ -17,18 +17,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger("model_training")
 
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
-EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "iris-classification-prod")
-MODEL_REGISTRY_NAME = os.getenv("MODEL_REGISTRY_NAME", "iris-model")
-
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "minio")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "minio123")
-MLFLOW_S3_ENDPOINT_URL = os.getenv("MLFLOW_S3_ENDPOINT_URL", "http://localhost:9000")
-
-os.environ["AWS_ACCESS_KEY_ID"] = AWS_ACCESS_KEY_ID
-os.environ["AWS_SECRET_ACCESS_KEY"] = AWS_SECRET_ACCESS_KEY
-os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
-
 
 def calculate_sha256(file_path: str) -> str:
     sha256_hash = hashlib.sha256()
@@ -39,16 +27,44 @@ def calculate_sha256(file_path: str) -> str:
 
 
 def train():
+    MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000")
+    EXPERIMENT_NAME = os.getenv("MLFLOW_EXPERIMENT_NAME", "iris-classification-prod")
+    MODEL_REGISTRY_NAME = os.getenv("MODEL_REGISTRY_NAME", "iris-model")
+
+    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID", "minio")
+    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "minio123")
+    MLFLOW_S3_ENDPOINT_URL = os.getenv(
+        "MLFLOW_S3_ENDPOINT_URL", "http://localhost:9000"
+    )
+    is_test_mode = os.getenv("TEST_MODE", "false").lower() == "true"
+
+    os.environ["AWS_ACCESS_KEY_ID"] = AWS_ACCESS_KEY_ID
+    os.environ["AWS_SECRET_ACCESS_KEY"] = AWS_SECRET_ACCESS_KEY
+    os.environ["MLFLOW_S3_ENDPOINT_URL"] = MLFLOW_S3_ENDPOINT_URL
+
     mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
     mlflow.set_experiment(EXPERIMENT_NAME)
     logger.info(f"Connected to MLflow Tracking URI: {MLFLOW_TRACKING_URI}")
 
     iris = load_iris()
+    X, y = iris.data, iris.target
+
+    if is_test_mode:
+        n_estimators = 2
+        max_depth = 2
+        X = X[:50]
+        y = y[:50]
+        print("--- Running in TEST_MODE (Lightweight settings) ---")
+    else:
+        n_estimators = 100
+        max_depth = 5
+        print("--- Running in Full Production Mode ---")
+
     X_train, X_test, y_train, y_test = train_test_split(
-        iris.data, iris.target, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42
     )
 
-    params = {"n_estimators": 100, "max_depth": 4, "random_state": 42}
+    params = {"n_estimators": n_estimators, "max_depth": max_depth, "random_state": 42}
 
     with mlflow.start_run() as run:
         logger.info(f"MLflow Run ID: {run.info.run_id}")

@@ -13,6 +13,8 @@ def test_full_training_run_local(monkeypatch, tmp_path):
     monkeypatch.setenv("MLFLOW_TRACKING_URI", f"file://{mlflow_dir}")
     monkeypatch.setenv("MODEL_REGISTRY_NAME", "test-iris-model")
 
+    monkeypatch.setenv("TEST_MODE", "true")
+
     # Run train function
     train()
 
