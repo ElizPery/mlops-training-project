@@ -1,3 +1,4 @@
+---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -10,10 +11,9 @@ spec:
     matchLabels:
       app: inference-service
   namespaceSelector:
-    matchNames:
-      - production
+    matchNames: [production]
   endpoints:
-  - port: http
-    path: /metrics
-    interval: 15s
-    scrapeTimeout: 10s
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

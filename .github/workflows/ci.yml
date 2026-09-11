@@ -40,7 +40,7 @@ jobs:
 
       # Kubernetes Manifest Linting
       - name: Lint Kubernetes Manifests (yamllint)
-        run: yamllint -c .yamllint.yml k8s/ || yamllint k8s/
+        run: yamllint -c .yamllint.yml k8s/ argocd-apps/ || yamllint k8s/ argocd-apps/
 
       # Terraform Formatting Check
       - name: Check Terraform Formatting

@@ -1,21 +1,21 @@
+---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: prometheus-operator
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  finalizers: [resources-finalizer.argocd.argoproj.io]
 spec:
   destination:
     namespace: monitoring
-    server: "https://kubernetes.default.svc"
+    server: https://kubernetes.default.svc
   source:
-    repoURL: "https://prometheus-community.github.io/helm-charts"
+    repoURL: https://prometheus-community.github.io/helm-charts
     targetRevision: 75.16.1
     chart: kube-prometheus-stack
     helm:
       valuesObject:
-        nameOverride: "prometheus-operator"
+        nameOverride: prometheus-operator
         defaultRules:
           create: true
           rules:
@@ -31,7 +31,7 @@ spec:
           prometheusSpec:
             serviceMonitorSelector: {}
             serviceMonitorSelectorNilUsesHelmValues: false
-            retention: 2d   
+            retention: 2d
         kubelet:
           enabled: true
           serviceMonitor:
@@ -46,7 +46,7 @@ spec:
         grafana:
           sidecar:
             datasources:
-              enabled: true              
+              enabled: true
               defaultDatasourceEnabled: false
           ingress:
             enabled: false
@@ -54,17 +54,16 @@ spec:
           additionalDataSources:
             - name: Prometheus
               type: prometheus
-              uid: prometheus 
+              uid: prometheus
               url: http://prometheus-operator-prometheus.monitoring:9090
               access: proxy
-              isDefault: true         
-
+              isDefault: true
             - name: Loki
               type: loki
-              uid: loki             
+              uid: loki
               url: http://loki.monitoring:3100
               access: proxy
-              isDefault: false  
+              isDefault: false
         prometheusOperator:
           admissionWebhooks:
             enabled: false
@@ -84,9 +83,7 @@ spec:
             port: 9200
   project: default
   syncPolicy:
-    syncOptions:
-    - Replace=true
-    - ServerSideApply=true
+    syncOptions: [Replace=true, ServerSideApply=true]
     automated:
       prune: true
       selfHeal: true
