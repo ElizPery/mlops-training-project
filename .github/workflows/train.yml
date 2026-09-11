@@ -1,0 +1,32 @@
+name: Model Training Pipeline
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Weekly on Mondays
+  workflow_dispatch:     # Manual trigger button in GitHub UI
+
+jobs:
+  train-model:
+    name: Run ML Training Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r src/requirements.txt
+
+      - name: Execute Model Training
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          MODEL_REGISTRY_NAME: "iris-model"
+        run: |
+          python src/train.py
