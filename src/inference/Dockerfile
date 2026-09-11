@@ -16,17 +16,6 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ===== STAGE 2: Final runtime image =====
-FROM python:3.13-slim AS runtime
-
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PATH="/opt/venv/bin:$PATH"
-
-# Set working directory
-WORKDIR /app
-
-# Install only runtime system libraries if they are required
-# by image-processing dependencies
 FROM python:3.11-slim AS runtime
 
 WORKDIR /app

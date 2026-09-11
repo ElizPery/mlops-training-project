@@ -50,7 +50,7 @@ jobs:
       - name: Build Local Docker Image for Security Scan
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./src/inference
           file: ./src/inference/Dockerfile
           platforms: linux/amd64
           load: true
